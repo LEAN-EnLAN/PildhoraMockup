@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { initDatabase } from './services/databaseService';
+import { requestNotificationPermissions } from './services/notificationService';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import LoginPage from './pages/LoginPage';
 import PatientDashboard from './pages/PatientDashboard';
-import CaregiverDashboard from './pages-CaregiverDashboard';
+import CaregiverDashboard from './pages/CaregiverDashboard';
 import { UserType } from './types';
 
 const Stack = createStackNavigator();
@@ -29,6 +31,11 @@ const AppNavigator: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    useEffect(() => {
+        initDatabase();
+        requestNotificationPermissions();
+    }, []);
+
     return (
         <AuthProvider>
             <DataProvider>

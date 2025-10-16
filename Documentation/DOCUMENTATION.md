@@ -1,17 +1,16 @@
 # PILDHORA Documentation
 
-Este documento proporciona una descripción técnica de la aplicación PILDHORA, su arquitectura y sus componentes clave.
+Este documento proporciona una descripción técnica de la aplicación PILDHORA, su arquitectura y sus componentes clave, basados en un enfoque 100% local utilizando Expo.
 
 ## 1. Resumen de la Arquitectura
 
-PILDHORA sigue una arquitectura de "primero sin conexión" (offline-first) diseñada para garantizar la funcionalidad incluso sin una conexión a internet estable.
+PILDHORA utiliza una arquitectura completamente local ("local-first") para garantizar la máxima privacidad y funcionalidad sin necesidad de una conexión a internet.
 
 *   **Frontend:** React Native (con Expo Go) para una experiencia de usuario nativa en iOS y Android.
 *   **Gestión de Estado:** Zustand o Context API para un manejo de estado predecible y centralizado.
-*   **Base de Datos Local:** SQLite para persistir los datos de la aplicación localmente en el dispositivo.
-*   **Base de Datos Remota:** Firestore para la sincronización de datos en la nube y el soporte de múltiples dispositivos.
-*   **Autenticación:** Firebase Authentication para gestionar el inicio de sesión y la seguridad de los usuarios.
-*   **Notificaciones:** Firebase Cloud Messaging para notificaciones push.
+*   **Base de Datos Local:** `expo-sqlite` para persistir todos los datos de la aplicación (usuarios, medicamentos, horarios) directamente en el dispositivo.
+*   **Autenticación Local:** `expo-secure-store` para gestionar de forma segura la sesión del usuario.
+*   **Notificaciones Locales:** `expo-notifications` para programar todas las alertas y recordatorios.
 *   **Conectividad Hardware:** Módulo Bluetooth Low Energy (BLE) para la comunicación con el pastillero inteligente.
 
 ## 2. Estructura de Archivos
@@ -29,12 +28,10 @@ La estructura del proyecto está organizada para separar las preocupaciones y fa
  │   ├── Dashboard/   # Paneles de control para paciente y cuidador
  │   ├── Reports/     # Pantallas de informes
  │   └── Settings/    # Pantallas de configuración
- ├── services/        # Lógica de negocio y comunicación con APIs
+ ├── services/        # Lógica de negocio y comunicación con APIs locales
  │   ├── bleService.ts
- │   ├── firebaseService.ts
- │   └── syncService.ts
- ├── database/        # Configuración y migraciones de la BD local
- │   └── localDB.ts
+ │   ├── databaseService.ts
+ │   └── notificationService.ts
  ├── store/           # Lógica de gestión de estado
  │   └── appState.ts
  ├── navigation/      # Configuración de React Navigation
@@ -46,9 +43,8 @@ La estructura del proyecto está organizada para separar las preocupaciones y fa
 
 1.  **Entrada del Usuario:** Las interacciones del usuario en las pantallas (`screens`) desencadenan acciones.
 2.  **Gestión de Estado:** Las acciones actualizan el estado global a través de la tienda de Zustand/Context.
-3.  **Persistencia Local:** Los cambios de estado relevantes (p. ej., añadir un medicamento) se guardan inmediatamente en la base de datos SQLite local.
-4.  **Sincronización en Segundo Plano:** El `syncService` detecta los cambios en la base de datos local y los sincroniza con Firestore cuando hay conexión a internet.
-5.  **Resolución de Conflictos:** Los conflictos de datos se resuelven utilizando marcas de tiempo (timestamps), dando prioridad al cambio más reciente.
+3.  **Persistencia Local:** Los cambios de estado relevantes (p. ej., añadir un medicamento) se guardan inmediatamente en la base de datos `expo-sqlite`.
+4.  **Notificaciones Programadas:** Acciones como la creación de un nuevo horario de medicación programan notificaciones locales a través del `notificationService`.
 
 ## 4. Sistema de Diseño y UI
 
@@ -60,23 +56,23 @@ La estructura del proyecto está organizada para separar las preocupaciones y fa
 
 ## 5. Módulos Clave
 
+### `databaseService.ts`
+
+Responsable de todas las operaciones de la base de datos con `expo-sqlite`.
+*   Inicializa la base de datos y crea las tablas.
+*   Proporciona métodos CRUD (Crear, Leer, Actualizar, Eliminar) para todos los datos de la aplicación.
+*   Gestiona las transacciones de la base de datos.
+
+### `notificationService.ts`
+
+Gestiona la programación y el manejo de todas las notificaciones locales.
+*   Solicita permisos de notificación al usuario.
+*   Programa notificaciones para recordatorios de dosis, alertas de recarga, etc.
+*   Maneja las interacciones del usuario con las notificaciones.
+
 ### `bleService.ts`
 
 Responsable de gestionar la conexión BLE con el pastillero inteligente.
 *   Escanea y se conecta a dispositivos BLE.
 *   Lee datos del pastillero (p. ej., compartimentos abiertos).
 *   Maneja las desconexiones y los errores de conexión.
-
-### `syncService.ts`
-
-Orquesta la sincronización de datos entre la base de datos local y Firestore.
-*   Monitoriza los cambios en la base de datos local.
-*   Envía los cambios a Firestore cuando está en línea.
-*   Obtiene los cambios de Firestore y los aplica a la base de datos local.
-
-### `firebaseService.ts`
-
-Gestiona todas las interacciones con los servicios de Firebase (Auth, Firestore, Cloud Messaging).
-*   Autenticación de usuarios.
-*   Operaciones CRUD en Firestore.
-*   Envío y recepción de notificaciones push.
