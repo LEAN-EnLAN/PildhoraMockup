@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useData } from '../context/DataContext';
 import { UserType } from '../types';
 
 // Catppuccin Mocha Colors
@@ -11,17 +10,41 @@ const catppuccin = {
     blue: '#89B4FA',
     text: '#CDD6F4',
     surface0: '#313244',
-    green: '#A6E3A1', // For patient button
+    green: '#A6E3A1',
+    overlay1: '#6c7086',
 };
 
 const LoginPage: React.FC = () => {
-    const { login } = useAuth();
-    const { clearData } = useData();
+    const { login, register } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState(''); // For registration
+    const [isRegistering, setIsRegistering] = useState(false);
 
-    // The navigation is now handled by the AppNavigator based on the user state
-    const handleLogin = (userType: UserType) => {
-        clearData(); // Clear any stale data before logging in
-        login(userType);
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Por favor, introduce tu correo y contraseña.');
+            return;
+        }
+        try {
+            await login(email, password);
+        } catch (error) {
+            Alert.alert('Error de inicio de sesión', error.message);
+        }
+    };
+
+    const handleRegister = async () => {
+        if (!name || !email || !password) {
+            Alert.alert('Error', 'Por favor, completa todos los campos para registrarte.');
+            return;
+        }
+        try {
+            // For simplicity, new registrations are set as PATIENT.
+            // This could be expanded with a role selector.
+            await register(name, email, password, UserType.PATIENT);
+        } catch (error) {
+            Alert.alert('Error de registro', error.message);
+        }
     };
 
     return (
@@ -32,18 +55,47 @@ const LoginPage: React.FC = () => {
                     <Text style={styles.title}>PILDHORA</Text>
                     <Text style={styles.subtitle}>Tranquilidad conectada.</Text>
                 </View>
-                <View style={styles.buttonContainer}>
+
+                <View style={styles.formContainer}>
+                    {isRegistering && (
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nombre completo"
+                            placeholderTextColor={catppuccin.overlay1}
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
+                        />
+                    )}
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Correo electrónico"
+                        placeholderTextColor={catppuccin.overlay1}
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Contraseña"
+                        placeholderTextColor={catppuccin.overlay1}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+
                     <TouchableOpacity
-                        onPress={() => handleLogin(UserType.PATIENT)}
-                        style={[styles.button, styles.patientButton]}
+                        onPress={isRegistering ? handleRegister : handleLogin}
+                        style={[styles.button, styles.primaryButton]}
                     >
-                        <Text style={styles.buttonText}>Soy Paciente</Text>
+                        <Text style={styles.buttonText}>{isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => handleLogin(UserType.CAREGIVER)}
-                        style={[styles.button, styles.caregiverButton]}
-                    >
-                        <Text style={styles.buttonText}>Soy Cuidador</Text>
+
+                    <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
+                        <Text style={styles.toggleText}>
+                            {isRegistering ? '¿Ya tienes una cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -58,13 +110,12 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 50,
+        marginBottom: 40,
     },
     title: {
         fontSize: 48,
@@ -76,32 +127,37 @@ const styles = StyleSheet.create({
         color: catppuccin.text,
         marginTop: 8,
     },
-    buttonContainer: {
+    formContainer: {
         width: '100%',
-        maxWidth: 400,
+    },
+    input: {
+        backgroundColor: catppuccin.surface0,
+        color: catppuccin.text,
+        paddingHorizontal: 15,
+        paddingVertical: 15,
+        borderRadius: 12,
+        fontSize: 16,
+        marginBottom: 12,
     },
     button: {
         width: '100%',
         paddingVertical: 18,
-        borderRadius: 16, // rounded-2xl
+        borderRadius: 16,
         alignItems: 'center',
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 5,
+        marginTop: 10,
     },
-    patientButton: {
-        backgroundColor: catppuccin.green,
-    },
-    caregiverButton: {
+    primaryButton: {
         backgroundColor: catppuccin.blue,
     },
     buttonText: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '600',
         color: catppuccin.base,
+    },
+    toggleText: {
+        color: catppuccin.mauve,
+        textAlign: 'center',
+        marginTop: 20,
     },
 });
 
