@@ -1,4 +1,3 @@
-
 export enum UserType {
     PATIENT = 'patient',
     CAREGIVER = 'caregiver',
@@ -28,6 +27,8 @@ export interface IntakeRecord {
     dosage: string;
     scheduledTime: Date;
     status: IntakeStatus;
+    compartment: number;
+    method?: 'manual' | 'bluetooth';
 }
 
 export interface Medication {
@@ -72,4 +73,24 @@ export interface Task {
     description: string;
     dueDate: Date | string;
     status: TaskStatus;
+}
+
+// --- New Device-related types ---
+
+export enum ScanStatus {
+    IDLE = 'IDLE',
+    SCANNING = 'SCANNING',
+    FINISHED = 'FINISHED',
+}
+
+export interface PillboxDevice {
+    id: string;
+    name: string;
+}
+
+export interface PillboxDeviceState {
+    isConnected: boolean;
+    batteryLevel: number;
+    device: PillboxDevice | null;
+    compartments: { id: number; isOpen: boolean }[];
 }

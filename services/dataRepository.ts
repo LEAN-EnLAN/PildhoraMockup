@@ -1,4 +1,3 @@
-
 import {
     fetchMedications,
     fetchIntakeHistory,
@@ -30,8 +29,8 @@ export const getInitialData = async () => {
     return { medications, intakeHistory, tasks, notifications, notificationPreferences };
 };
 
-export const updateIntakeStatus = async (record: IntakeRecord, status: IntakeStatus) => {
-    const updatedRecord = { ...record, status };
+export const updateIntakeStatus = async (record: IntakeRecord, status: IntakeStatus, method: 'manual' | 'bluetooth' = 'manual') => {
+    const updatedRecord = { ...record, status, method };
     
     // In a real app, this logic would be on the server.
     // Here we simulate a notification being generated based on notification preferences.
@@ -44,6 +43,29 @@ export const updateIntakeStatus = async (record: IntakeRecord, status: IntakeSta
     
     return updateIntakeRecord(updatedRecord);
 };
+
+export type DeviceNotificationType = 'BATTERY_LOW' | 'DISCONNECTED' | 'WRONG_COMPARTMENT_OPENED';
+
+export const addDeviceNotification = (type: DeviceNotificationType, value?: any) => {
+    let message = '';
+    switch (type) {
+        case 'BATTERY_LOW':
+            message = `El pastillero tiene la batería baja (${value}%). Por favor, conéctelo para cargar.`;
+            break;
+        case 'DISCONNECTED':
+            message = 'El pastillero se ha desconectado. Verifique la conexión Bluetooth y que esté encendido.';
+            break;
+        case 'WRONG_COMPARTMENT_OPENED':
+             if (value && value.opened && value.expected && value.medName) {
+                message = `Alerta: Se abrió el compartimento #${value.opened} pero la próxima medicina (${value.medName}) está en el compartimento #${value.expected}.`;
+            }
+            break;
+    }
+    if (message) {
+        addNotification(message);
+    }
+};
+
 
 export const addMedication = (medData: Omit<Medication, 'id' | 'patientId'>) => {
     return saveMedication({ ...medData, patientId: PATIENT_ID });

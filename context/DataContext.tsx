@@ -1,5 +1,4 @@
-
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useRef } from 'react';
 import {
     IntakeRecord,
     IntakeStatus,
@@ -11,6 +10,7 @@ import {
 } from '../types';
 import * as dataRepo from '../services/dataRepository';
 import { useAuth } from './AuthContext';
+import { useDevice } from './DeviceContext';
 
 interface DataContextType {
     intakeHistory: IntakeRecord[];
@@ -38,6 +38,7 @@ const initialPrefs: NotificationPreferences = { missedDose: true, doseTaken: fal
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user } = useAuth();
+    const { deviceState, subscribeToCompartmentOpen } = useDevice();
     const [loading, setLoading] = useState(true);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>(SyncStatus.SYNCING);
 
@@ -46,6 +47,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [tasks, setTasks] = useState<Task[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(initialPrefs);
+    
+    // State for device notification throttling
+    const [hasSentLowBatteryWarning, setHasSentLowBatteryWarning] = useState(false);
+    const prevIsConnected = useRef(deviceState.isConnected);
 
     const fetchData = useCallback(async () => {
         if (!user) {
@@ -93,10 +98,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // --- ACTIONS ---
 
-    const updateIntakeStatus = async (record: IntakeRecord, status: IntakeStatus) => {
+    const updateIntakeStatus = async (record: IntakeRecord, status: IntakeStatus, method: 'manual' | 'bluetooth' = 'manual') => {
         setSyncStatus(SyncStatus.SYNCING);
         try {
-            const updatedRecord = await dataRepo.updateIntakeStatus(record, status);
+            const updatedRecord = await dataRepo.updateIntakeStatus(record, status, method);
             setIntakeHistory(prev => prev.map(r => (r.id === updatedRecord.id ? { ...updatedRecord, scheduledTime: new Date(updatedRecord.scheduledTime) } : r)));
             
             // Refetch notifications to see new ones
@@ -110,6 +115,57 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
     
+    // Effect for handling automatic intake from device
+    useEffect(() => {
+        const handleCompartmentOpened = (compartmentId: number) => {
+            console.log(`[DataContext] Received compartment open event for: ${compartmentId}`);
+            // Find the next pending medication for this specific compartment
+            const pendingForCompartment = intakeHistory
+                .filter(r => r.status === IntakeStatus.PENDING && r.compartment === compartmentId)
+                .sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
+            
+            const nextMedicationInCompartment = pendingForCompartment[0];
+            
+            if (nextMedicationInCompartment) {
+                 const now = new Date();
+                 const scheduledTime = nextMedicationInCompartment.scheduledTime;
+                 // Check if the opening is within a reasonable window (e.g., from scheduled time up to 1 hour after)
+                 if (now >= scheduledTime && (now.getTime() - scheduledTime.getTime()) < 60 * 60 * 1000) { 
+                    console.log(`[DataContext] Automatically marking ${nextMedicationInCompartment.medicationName} as taken via Bluetooth.`);
+                    updateIntakeStatus(nextMedicationInCompartment, IntakeStatus.TAKEN, 'bluetooth');
+                 }
+            }
+        };
+        
+        const unsubscribe = subscribeToCompartmentOpen(handleCompartmentOpened);
+        
+        return () => {
+            unsubscribe();
+        };
+    }, [subscribeToCompartmentOpen, intakeHistory]);
+    
+    // Effect for handling device status notifications (battery, connection)
+    useEffect(() => {
+        const LOW_BATTERY_THRESHOLD = 20;
+
+        // Low battery notification logic
+        if (deviceState.isConnected && deviceState.batteryLevel < LOW_BATTERY_THRESHOLD && !hasSentLowBatteryWarning) {
+            dataRepo.addDeviceNotification('BATTERY_LOW', deviceState.batteryLevel);
+            setHasSentLowBatteryWarning(true);
+        } else if (deviceState.batteryLevel >= LOW_BATTERY_THRESHOLD) {
+            // Reset warning when battery is charged again or on initial connection
+            if(hasSentLowBatteryWarning) setHasSentLowBatteryWarning(false);
+        }
+
+        // Disconnection notification logic
+        if (prevIsConnected.current && !deviceState.isConnected) {
+            dataRepo.addDeviceNotification('DISCONNECTED');
+        }
+
+        // Update ref for next render
+        prevIsConnected.current = deviceState.isConnected;
+    }, [deviceState.isConnected, deviceState.batteryLevel, hasSentLowBatteryWarning]);
+
     const addMedication = async (medData: Omit<Medication, 'id' | 'patientId'>) => {
         const newMed = await dataRepo.addMedication(medData);
         setMedications(prev => [...prev, newMed]);
@@ -160,7 +216,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 notificationPreferences,
                 syncStatus,
                 loading,
-                updateIntakeStatus,
+                updateIntakeStatus: (record, status) => updateIntakeStatus(record, status, 'manual'),
                 addMedication,
                 updateMedication,
                 deleteMedication,

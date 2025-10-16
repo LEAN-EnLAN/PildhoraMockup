@@ -1,4 +1,3 @@
-
 import {
     IntakeRecord,
     IntakeStatus,
@@ -22,16 +21,17 @@ let MOCK_MEDICATIONS: Medication[] = [
     { id: 'med-04', patientId: PATIENT_ID, name: 'Aspirina', dosage: '81mg', stock: 15, refillReminderStockLevel: 7, compartment: 1, refillDueDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000) },
 ];
 
-let MOCK_INTAKE_HISTORY: IntakeRecord[] = [
+let MOCK_INTAKE_HISTORY: Omit<IntakeRecord, 'scheduledTime'>[] = [
     // Morning
-    { id: 'intake-01', patientId: PATIENT_ID, medicationId: 'med-01', medicationName: 'Lisinopril', dosage: '10mg', scheduledTime: new Date(today.getTime() + 8 * 60 * 60 * 1000), status: IntakeStatus.TAKEN },
-    { id: 'intake-02', patientId: PATIENT_ID, medicationId: 'med-04', medicationName: 'Aspirina', dosage: '81mg', scheduledTime: new Date(today.getTime() + 8 * 60 * 60 * 1000), status: IntakeStatus.TAKEN },
+    { id: 'intake-01', patientId: PATIENT_ID, medicationId: 'med-01', medicationName: 'Lisinopril', dosage: '10mg', scheduledTime: new Date(today.getTime() + 8 * 60 * 60 * 1000), status: IntakeStatus.TAKEN, compartment: 1, method: 'manual' },
+    { id: 'intake-02', patientId: PATIENT_ID, medicationId: 'med-04', medicationName: 'Aspirina', dosage: '81mg', scheduledTime: new Date(today.getTime() + 8 * 60 * 60 * 1000), status: IntakeStatus.TAKEN, compartment: 1, method: 'manual' },
     // Midday
-    { id: 'intake-03', patientId: PATIENT_ID, medicationId: 'med-02', medicationName: 'Metformin', dosage: '500mg', scheduledTime: new Date(today.getTime() + 14 * 60 * 60 * 1000), status: IntakeStatus.MISSED },
+    { id: 'intake-03', patientId: PATIENT_ID, medicationId: 'med-02', medicationName: 'Metformin', dosage: '500mg', scheduledTime: new Date(today.getTime() + 14 * 60 * 60 * 1000), status: IntakeStatus.MISSED, compartment: 2 },
     // Evening
-    { id: 'intake-04', patientId: PATIENT_ID, medicationId: 'med-03', medicationName: 'Simvastatin', dosage: '20mg', scheduledTime: new Date(today.getTime() + 20 * 60 * 60 * 1000), status: IntakeStatus.PENDING },
-    { id: 'intake-05', patientId: PATIENT_ID, medicationId: 'med-02', medicationName: 'Metformin', dosage: '500mg', scheduledTime: new Date(today.getTime() + 20 * 60 * 60 * 1000), status: IntakeStatus.PENDING },
-];
+    { id: 'intake-04', patientId: PATIENT_ID, medicationId: 'med-03', medicationName: 'Simvastatin', dosage: '20mg', scheduledTime: new Date(today.getTime() + 20 * 60 * 60 * 1000), status: IntakeStatus.PENDING, compartment: 3 },
+    { id: 'intake-05', patientId: PATIENT_ID, medicationId: 'med-02', medicationName: 'Metformin', dosage: '500mg', scheduledTime: new Date(today.getTime() + 20 * 60 * 60 * 1000), status: IntakeStatus.PENDING, compartment: 2 },
+].map(r => ({...r, scheduledTime: r.scheduledTime.toISOString()})) as any;
+
 
 let MOCK_TASKS: Task[] = [
     { id: 'task-01', caregiverId: CAREGIVER_ID, title: 'Comprar gasas', description: 'En la farmacia de la esquina', dueDate: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000), status: TaskStatus.TODO },
@@ -58,7 +58,7 @@ const simulateApiCall = <T>(data: T, delay = 500): Promise<T> =>
 export const fetchMedications = (patientId: string) => simulateApiCall(MOCK_MEDICATIONS.filter(m => m.patientId === patientId));
 export const fetchIntakeHistory = (patientId: string) => {
     // Deserialize date strings
-    const historyWithDates = MOCK_INTAKE_HISTORY.filter(r => r.patientId === patientId).map(r => ({ ...r, scheduledTime: new Date(r.scheduledTime) }));
+    const historyWithDates = MOCK_INTAKE_HISTORY.filter((r: any) => r.patientId === patientId).map((r: any) => ({ ...r, scheduledTime: new Date(r.scheduledTime) }));
     return simulateApiCall(historyWithDates);
 }
 export const fetchTasks = (caregiverId: string) => simulateApiCall(MOCK_TASKS.filter(t => t.caregiverId === caregiverId));
@@ -67,7 +67,7 @@ export const fetchNotificationPreferences = () => simulateApiCall(MOCK_NOTIFICAT
 
 // Update Functions
 export const updateIntakeRecord = async (record: IntakeRecord): Promise<IntakeRecord> => {
-    MOCK_INTAKE_HISTORY = MOCK_INTAKE_HISTORY.map(r => r.id === record.id ? record : r);
+    MOCK_INTAKE_HISTORY = MOCK_INTAKE_HISTORY.map((r: any) => r.id === record.id ? record : r);
     return simulateApiCall(record);
 };
 

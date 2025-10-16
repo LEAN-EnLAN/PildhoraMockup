@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -11,8 +10,9 @@ import CaregiverBottomNav from '../components/caregiver/CaregiverBottomNav';
 import NotificationBell from '../components/caregiver/NotificationBell';
 import SyncStatusIndicator from '../components/common/SyncStatusIndicator';
 import NotificationPreferencesModal from '../components/caregiver/NotificationPreferencesModal';
+import DeviceManager from '../components/caregiver/DeviceManager';
 
-export type View = 'home' | 'history' | 'meds' | 'tasks' | 'adherence';
+export type View = 'home' | 'history' | 'meds' | 'tasks' | 'adherence' | 'device';
 
 const CaregiverDashboard: React.FC = () => {
     const { user, logout } = useAuth();
@@ -43,6 +43,8 @@ const CaregiverDashboard: React.FC = () => {
                 return <CaregiverTasks />;
             case 'adherence':
                 return <AdherenceChart />;
+            case 'device':
+                return <DeviceManager />;
             default:
                 return <CaregiverHome />;
         }
