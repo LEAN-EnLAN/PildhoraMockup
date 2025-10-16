@@ -1,6 +1,0 @@
-<!-- This is a placeholder SVG that will be saved as adaptive-icon.png -->
-<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1024" height="1024" fill="#FFFFFF"/>
-  <circle cx="512" cy="512" r="400" fill="#4285F4"/>
-  <path d="M 512 300 L 724 512 L 512 724 L 300 512 Z" fill="#FFFFFF"/>
-</svg>

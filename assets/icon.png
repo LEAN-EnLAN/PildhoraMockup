@@ -1,6 +1,0 @@
-<!-- This is a placeholder SVG that will be saved as icon.png -->
-<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1024" height="1024" fill="#4285F4"/>
-  <circle cx="512" cy="512" r="256" fill="#FFFFFF"/>
-  <path d="M 512 350 L 674 512 L 512 674 L 350 512 Z" fill="#4285F4"/>
-</svg>

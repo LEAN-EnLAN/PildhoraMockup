@@ -1,13 +1,25 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
-// Open a database, creating it if it doesn't exist.
-const db = SQLite.openDatabase('pildhora.db');
+// Open a database on native platforms; skip on web where expo-sqlite isn't available.
+let db: any = null;
+try {
+  if (Platform.OS !== 'web' && typeof (SQLite as any).openDatabase === 'function') {
+    db = SQLite.openDatabase('pildhora.db');
+  }
+} catch (e) {
+  console.warn('SQLite not available, skipping DB init on this platform:', e);
+}
 
 /**
  * Initializes the database, creating the necessary tables if they don't exist.
  * This function should be called once when the application starts.
  */
 export const initDatabase = () => {
+    if (!db) {
+        console.warn('Database unavailable on web; skipping schema creation.');
+        return;
+    }
     db.transaction(tx => {
         // User table
         tx.executeSql(

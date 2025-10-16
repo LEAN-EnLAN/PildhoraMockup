@@ -1,16 +1,39 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import db from '../services/databaseService';
 import { User, UserType } from '../types';
 
 const USER_SESSION_KEY = 'user_session';
+const USERS_KEY = 'pildhora_users';
+
+type StoredUser = User & { password: string };
+
+const getLocalUsers = (): StoredUser[] => {
+    try {
+        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(USERS_KEY) : null;
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+};
+
+const setLocalUsers = (users: StoredUser[]) => {
+    try {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+    } catch {
+        // ignore storage errors
+    }
+};
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    login: (email, password) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    register: (name, email, password, userType) => Promise<void>;
+    register: (name: string, email: string, password: string, userType: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,13 +48,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             try {
                 const userId = await SecureStore.getItemAsync(USER_SESSION_KEY);
                 if (userId) {
-                    db.transaction(tx => {
-                        tx.executeSql('SELECT * FROM users WHERE id = ?', [parseInt(userId, 10)], (_, { rows }) => {
-                            if (rows.length > 0) {
-                                setUser(rows._array[0]);
-                            }
+                    if (Platform.OS === 'web') {
+                        const users = getLocalUsers();
+                        const found = users.find(u => String(u.id) === String(userId));
+                        if (found) {
+                            setUser(found);
+                        }
+                    } else if (db) {
+                        db.transaction(tx => {
+                            tx.executeSql('SELECT * FROM users WHERE id = ?', [parseInt(userId, 10)], (_, { rows }) => {
+                                if (rows.length > 0) {
+                                    setUser(rows._array[0]);
+                                }
+                            });
                         });
-                    });
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load user from storage', error);
@@ -43,8 +74,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadUserFromStorage();
     }, []);
 
-    const login = (email, password) => {
-        return new Promise((resolve, reject) => {
+    const login = (email: string, password: string): Promise<void> => {
+        return new Promise<void>((resolve, reject) => {
+            if (Platform.OS === 'web') {
+                try {
+                    const users = getLocalUsers();
+                    const found = users.find(u => u.email === email && u.password === password);
+                    if (found) {
+                        setUser(found);
+                        SecureStore.setItemAsync(USER_SESSION_KEY, String(found.id)).then(() => resolve()).catch(reject);
+                    } else {
+                        reject(new Error('Invalid email or password'));
+                    }
+                } catch (e) {
+                    reject(e);
+                }
+                return;
+            }
+
+            if (!db) {
+                reject(new Error('Database not available'));
+                return;
+            }
             db.transaction(tx => {
                 tx.executeSql('SELECT * FROM users WHERE email = ? AND password = ?', [email, password], async (_, { rows }) => {
                     if (rows.length > 0) {
@@ -63,12 +114,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
     };
 
-    const register = (name, email, password, userType) => {
-        return new Promise((resolve, reject) => {
+    const register = (name: string, email: string, password: string, userType: string): Promise<void> => {
+        return new Promise<void>((resolve, reject) => {
+            if (Platform.OS === 'web') {
+                try {
+                    const users = getLocalUsers();
+                    const newUser: StoredUser = { id: String(Date.now()), name, email, password, userType } as StoredUser;
+                    users.push(newUser);
+                    setLocalUsers(users);
+                    login(email, password).then(() => resolve()).catch(reject);
+                } catch (e) {
+                    reject(e);
+                }
+                return;
+            }
+
+            if (!db) {
+                reject(new Error('Database not available'));
+                return;
+            }
             db.transaction(tx => {
                 tx.executeSql('INSERT INTO users (name, email, password, userType) VALUES (?, ?, ?, ?)', [name, email, password, userType], (_, { insertId }) => {
                     // After registering, log the user in
-                    login(email, password).then(resolve).catch(reject);
+                    login(email, password).then(() => resolve()).catch(reject);
                 }, (_, error) => {
                     reject(error);
                     return false;
