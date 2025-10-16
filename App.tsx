@@ -1,39 +1,40 @@
 import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import LoginPage from './pages/LoginPage';
 import PatientDashboard from './pages/PatientDashboard';
-import CaregiverDashboard from './pages/CaregiverDashboard';
+import CaregiverDashboard from './pages-CaregiverDashboard';
 import { UserType } from './types';
-import ProtectedRoute from './components/common/ProtectedRoute';
+
+const Stack = createStackNavigator();
+
+const AppNavigator: React.FC = () => {
+    const { user } = useAuth();
+
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {user ? (
+                user.userType === UserType.PATIENT ? (
+                    <Stack.Screen name="PatientDashboard" component={PatientDashboard} />
+                ) : (
+                    <Stack.Screen name="CaregiverDashboard" component={CaregiverDashboard} />
+                )
+            ) : (
+                <Stack.Screen name="Login" component={LoginPage} />
+            )}
+        </Stack.Navigator>
+    );
+};
 
 const App: React.FC = () => {
     return (
         <AuthProvider>
             <DataProvider>
-                <HashRouter>
-                    <Routes>
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route 
-                            path="/patient" 
-                            element={
-                                <ProtectedRoute allowedUserType={UserType.PATIENT}>
-                                    <PatientDashboard />
-                                </ProtectedRoute>
-                            } 
-                        />
-                        <Route 
-                            path="/caregiver" 
-                            element={
-                                <ProtectedRoute allowedUserType={UserType.CAREGIVER}>
-                                    <CaregiverDashboard />
-                                </ProtectedRoute>
-                            } 
-                        />
-                        <Route path="/" element={<LoginPage />} />
-                    </Routes>
-                </HashRouter>
+                <NavigationContainer>
+                    <AppNavigator />
+                </NavigationContainer>
             </DataProvider>
         </AuthProvider>
     );

@@ -1,51 +1,108 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { UserType } from '../types';
 import { useData } from '../context/DataContext';
+import { UserType } from '../types';
+
+// Catppuccin Mocha Colors
+const catppuccin = {
+    base: '#1E1E2E',
+    mauve: '#CBA6F7',
+    blue: '#89B4FA',
+    text: '#CDD6F4',
+    surface0: '#313244',
+    green: '#A6E3A1', // For patient button
+};
 
 const LoginPage: React.FC = () => {
-    const { login, user } = useAuth();
+    const { login } = useAuth();
     const { clearData } = useData();
-    const navigate = useNavigate();
 
-    useEffect(() => {
-        // Redirect if user is already logged in
-        if (user) {
-            navigate(user.userType === UserType.PATIENT ? '/patient' : '/caregiver', { replace: true });
-        }
-    }, [user, navigate]);
-
+    // The navigation is now handled by the AppNavigator based on the user state
     const handleLogin = (userType: UserType) => {
         clearData(); // Clear any stale data before logging in
         login(userType);
-        // The useEffect hook will handle navigation once the user state is updated
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-pildhora-background">
-            <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold text-pildhora-primary">PILDHORA</h1>
-                    <p className="mt-2 text-lg text-gray-600">Tranquilidad conectada.</p>
-                </div>
-                <div className="space-y-4">
-                    <button
-                        onClick={() => handleLogin(UserType.PATIENT)}
-                        className="w-full px-4 py-3 text-xl font-semibold text-white transition-transform transform bg-patient-btn rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 active:scale-95"
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar barStyle="light-content" />
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>PILDHORA</Text>
+                    <Text style={styles.subtitle}>Tranquilidad conectada.</Text>
+                </View>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        onPress={() => handleLogin(UserType.PATIENT)}
+                        style={[styles.button, styles.patientButton]}
                     >
-                        Soy Paciente
-                    </button>
-                    <button
-                        onClick={() => handleLogin(UserType.CAREGIVER)}
-                        className="w-full px-4 py-3 text-xl font-semibold text-white transition-transform transform bg-pildhora-secondary rounded-xl hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 active:scale-95"
+                        <Text style={styles.buttonText}>Soy Paciente</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => handleLogin(UserType.CAREGIVER)}
+                        style={[styles.button, styles.caregiverButton]}
                     >
-                        Soy Cuidador
-                    </button>
-                </div>
-            </div>
-        </div>
+                        <Text style={styles.buttonText}>Soy Cuidador</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: catppuccin.base,
+    },
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 50,
+    },
+    title: {
+        fontSize: 48,
+        fontWeight: 'bold',
+        color: catppuccin.mauve,
+    },
+    subtitle: {
+        fontSize: 18,
+        color: catppuccin.text,
+        marginTop: 8,
+    },
+    buttonContainer: {
+        width: '100%',
+        maxWidth: 400,
+    },
+    button: {
+        width: '100%',
+        paddingVertical: 18,
+        borderRadius: 16, // rounded-2xl
+        alignItems: 'center',
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 5,
+    },
+    patientButton: {
+        backgroundColor: catppuccin.green,
+    },
+    caregiverButton: {
+        backgroundColor: catppuccin.blue,
+    },
+    buttonText: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: catppuccin.base,
+    },
+});
 
 export default LoginPage;
