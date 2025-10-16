@@ -2,5 +2,12 @@
   "plugins": [
     "expo-sqlite",
     "expo-secure-store"
-  ]
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "c6e72271-8bc8-42a3-a2fc-5a0b0364217b"
+    }
+  },
+  "owner": "pulpo-code",
+  "slug": "pildhora"
 }
