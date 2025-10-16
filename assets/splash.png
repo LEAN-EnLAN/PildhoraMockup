@@ -1,0 +1,6 @@
+<!-- This is a placeholder SVG that will be saved as splash.png -->
+<svg width="1242" height="2436" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1242" height="2436" fill="#FFFFFF"/>
+  <circle cx="621" cy="1218" r="300" fill="#4285F4"/>
+  <text x="621" y="1318" font-family="Arial" font-size="72" text-anchor="middle" fill="#FFFFFF">Pildhora</text>
+</svg>

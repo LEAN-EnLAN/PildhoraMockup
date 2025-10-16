@@ -1,10 +1,4 @@
 {
-<<<<<<< Updated upstream
-  "plugins": [
-    "expo-sqlite",
-    "expo-secure-store"
-  ]
-=======
   "expo": {
     "name": "Pildhora - Medication Adherence Assistant",
     "slug": "pildhora",
@@ -43,5 +37,4 @@
     }
   },
   "owner": "pulpo-code"
->>>>>>> Stashed changes
 }
