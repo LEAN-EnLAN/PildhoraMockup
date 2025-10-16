@@ -1,6 +1,47 @@
 {
+<<<<<<< Updated upstream
   "plugins": [
     "expo-sqlite",
     "expo-secure-store"
   ]
+=======
+  "expo": {
+    "name": "Pildhora - Medication Adherence Assistant",
+    "slug": "pildhora",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c6e72271-8bc8-42a3-a2fc-5a0b0364217b"
+      }
+    }
+  },
+  "owner": "pulpo-code"
+>>>>>>> Stashed changes
 }
