@@ -64,13 +64,24 @@ const PatientDashboard: React.FC = () => {
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-pildhora-primary">PILDHORA</h1>
                         <p className="text-lg text-gray-600">Hola, {user?.name.split(' ')[0]}</p>
                     </div>
-                    <button onClick={handleLogout} className="text-sm font-semibold text-pildhora-secondary hover:underline">
-                        Salir
-                    </button>
+                    <div className="flex items-center space-x-2 sm:space-x-4">
+                        <button
+                            ref={emergencyButtonRef}
+                            onClick={() => setIsEmergencyModalOpen(true)}
+                            className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-base font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 active:scale-95 transition-transform"
+                            aria-label="Botón de emergencia"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            <span className="hidden sm:inline">EMERGENCIA</span>
+                        </button>
+                        <button onClick={handleLogout} className="text-sm font-semibold text-pildhora-secondary hover:underline">
+                            Salir
+                        </button>
+                    </div>
                  </div>
             </header>
 
-            <main className="p-4 sm:p-6 max-w-4xl mx-auto space-y-8">
+            <main className="p-4 sm:p-6 max-w-4xl mx-auto space-y-8 pb-8">
                 {loading ? renderLoader() : (
                     nextMedication ? (
                         <NextMedicationCard 
@@ -108,21 +119,9 @@ const PatientDashboard: React.FC = () => {
                         </div>
                     )}
                     
-                    <VisualPillbox medications={medications} />
+                    <VisualPillbox medications={medications} nextMedication={nextMedication} />
                 </div>
             </main>
-
-            <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t">
-                 <div className="max-w-4xl mx-auto">
-                    <button
-                        ref={emergencyButtonRef}
-                        onClick={() => setIsEmergencyModalOpen(true)}
-                        className="w-full py-4 text-xl font-bold text-white bg-red-600 rounded-2xl hover:bg-red-700 active:scale-95 transition-transform"
-                    >
-                        EMERGENCIA
-                    </button>
-                 </div>
-            </footer>
             
             <EmergencyModal 
                 isOpen={isEmergencyModalOpen}
