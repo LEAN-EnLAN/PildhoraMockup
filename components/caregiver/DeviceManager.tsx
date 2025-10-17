@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDevice } from '../../context/DeviceContext';
 import { ScanStatus, PillboxDevice } from '../../types';
 
@@ -18,6 +18,10 @@ const BatteryIcon: React.FC<{ level: number }> = ({ level }) => {
     );
 };
 
+const Spinner: React.FC<{ className?: string }> = ({ className = 'border-white' }) => (
+    <div className={`animate-spin rounded-full h-5 w-5 border-b-2 ${className}`}></div>
+);
+
 
 const DeviceManager: React.FC = () => {
     const { 
@@ -27,9 +31,24 @@ const DeviceManager: React.FC = () => {
         startScan, 
         connectToDevice, 
         disconnectFromDevice,
+        connectingDeviceId,
+        isDisconnecting,
+        connectionError,
         _mockOpenCompartment 
     } = useDevice();
     const { isConnected, device, batteryLevel } = deviceState;
+
+    const [showSuccess, setShowSuccess] = useState(false);
+    const prevIsConnected = useRef(isConnected);
+
+    useEffect(() => {
+        if (!prevIsConnected.current && isConnected) {
+            setShowSuccess(true);
+            const timer = setTimeout(() => setShowSuccess(false), 3000);
+            return () => clearTimeout(timer);
+        }
+        prevIsConnected.current = isConnected;
+    }, [isConnected]);
 
     const renderScanView = () => (
         <div className="bg-white p-6 rounded-lg shadow space-y-4">
@@ -37,7 +56,7 @@ const DeviceManager: React.FC = () => {
             <p className="text-gray-600">Busca el pastillero PILDHORA para vincularlo a la cuenta del paciente y habilitar el registro automático de tomas.</p>
             <button
                 onClick={startScan}
-                disabled={scanStatus === ScanStatus.SCANNING}
+                disabled={scanStatus === ScanStatus.SCANNING || !!connectingDeviceId}
                 className="w-full px-4 py-3 text-lg font-semibold text-white bg-pildhora-secondary rounded-xl hover:bg-blue-800 disabled:bg-gray-400 transition"
             >
                 {scanStatus === ScanStatus.SCANNING ? 'Buscando...' : 'Buscar Dispositivos'}
@@ -47,21 +66,30 @@ const DeviceManager: React.FC = () => {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pildhora-secondary"></div>
                 </div>
             )}
+             {connectionError && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-800 rounded-md text-sm">
+                    <strong>Error:</strong> {connectionError}
+                </div>
+            )}
             {scanStatus === ScanStatus.FINISHED && (
                 <div className="space-y-3 pt-4">
                     <h4 className="font-semibold text-gray-700">Dispositivos Encontrados:</h4>
                     {foundDevices.length > 0 ? (
-                        foundDevices.map((dev: PillboxDevice) => (
-                            <div key={dev.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
-                                <p className="font-semibold text-gray-700">{dev.name}</p>
-                                <button
-                                    onClick={() => connectToDevice(dev.id)}
-                                    className="px-3 py-1 text-sm font-semibold text-white bg-pildhora-primary rounded-md hover:bg-green-700"
-                                >
-                                    Conectar
-                                </button>
-                            </div>
-                        ))
+                        foundDevices.map((dev: PillboxDevice) => {
+                            const isConnecting = connectingDeviceId === dev.id;
+                            return (
+                                <div key={dev.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
+                                    <p className="font-semibold text-gray-700">{dev.name}</p>
+                                    <button
+                                        onClick={() => connectToDevice(dev.id)}
+                                        disabled={isConnecting || !!connectingDeviceId}
+                                        className="px-3 py-1 text-sm font-semibold text-white bg-pildhora-primary rounded-md hover:bg-green-700 w-24 flex justify-center items-center disabled:bg-gray-400"
+                                    >
+                                        {isConnecting ? <Spinner /> : 'Conectar'}
+                                    </button>
+                                </div>
+                            );
+                        })
                     ) : (
                         <p className="text-center text-gray-500">No se encontraron dispositivos. Asegúrate de que el pastillero esté encendido y cerca.</p>
                     )}
@@ -72,6 +100,11 @@ const DeviceManager: React.FC = () => {
     
     const renderConnectedView = () => (
         <div className="bg-white p-6 rounded-lg shadow space-y-6">
+            {showSuccess && (
+                <div className="p-3 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm transition-opacity duration-300">
+                    ¡Dispositivo conectado con éxito!
+                </div>
+            )}
             <div>
                  <h3 className="text-xl font-bold text-gray-800">Pastillero Conectado</h3>
                  <p className="text-pildhora-success font-semibold">El dispositivo está vinculado y funcionando.</p>
@@ -93,9 +126,17 @@ const DeviceManager: React.FC = () => {
 
             <button
                 onClick={disconnectFromDevice}
-                className="w-full px-4 py-2 text-md font-semibold text-pildhora-error-dark bg-red-100 rounded-xl hover:bg-red-200 transition"
+                disabled={isDisconnecting}
+                className="w-full px-4 py-2 text-md font-semibold text-pildhora-error-dark bg-red-100 rounded-xl hover:bg-red-200 transition flex justify-center items-center disabled:opacity-70"
             >
-                Desvincular Dispositivo
+                {isDisconnecting ? (
+                     <>
+                        <Spinner className="border-pildhora-error-dark mr-2" />
+                        <span>Desvinculando...</span>
+                    </>
+                ) : (
+                    'Desvincular Dispositivo'
+                )}
             </button>
         </div>
     );

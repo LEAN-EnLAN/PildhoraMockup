@@ -6,6 +6,9 @@ interface DeviceContextType {
     deviceState: PillboxDeviceState;
     foundDevices: PillboxDevice[];
     scanStatus: ScanStatus;
+    connectingDeviceId: string | null;
+    isDisconnecting: boolean;
+    connectionError: string | null;
     startScan: () => void;
     connectToDevice: (deviceId: string) => Promise<void>;
     disconnectFromDevice: () => void;
@@ -35,6 +38,9 @@ export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [deviceState, setDeviceState] = useState<PillboxDeviceState>(initialDeviceState);
     const [foundDevices, setFoundDevices] = useState<PillboxDevice[]>([]);
     const [scanStatus, setScanStatus] = useState<ScanStatus>(ScanStatus.IDLE);
+    const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
+    const [isDisconnecting, setIsDisconnecting] = useState<boolean>(false);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
 
     useEffect(() => {
         mockBluetoothService.init(
@@ -59,6 +65,7 @@ export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const startScan = useCallback(async () => {
         setScanStatus(ScanStatus.SCANNING);
+        setConnectionError(null); // Clear previous errors on new scan
         setFoundDevices([]);
         const devices = await mockBluetoothService.scanForDevices();
         setFoundDevices(devices);
@@ -66,17 +73,27 @@ export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     const connectToDevice = useCallback(async (deviceId: string) => {
+        setConnectionError(null);
+        setConnectingDeviceId(deviceId);
         try {
             await mockBluetoothService.connect(deviceId);
         } catch (error) {
             console.error(`Failed to connect to device ${deviceId}`, error);
-            // Optionally update state to show connection error
+            setConnectionError(error instanceof Error ? error.message : 'No se pudo conectar. Intente de nuevo.');
+        } finally {
+            setConnectingDeviceId(null);
         }
     }, []);
 
     const disconnectFromDevice = useCallback(() => {
-        mockBluetoothService.disconnect();
+        setIsDisconnecting(true);
+        // Simulate disconnect delay for visual feedback
+        setTimeout(() => {
+            mockBluetoothService.disconnect();
+            setIsDisconnecting(false);
+        }, 1000);
     }, []);
+
 
     // For simulation
     const _mockOpenCompartment = (compartmentId: number) => {
@@ -89,6 +106,9 @@ export const DeviceProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 deviceState,
                 foundDevices,
                 scanStatus,
+                connectingDeviceId,
+                isDisconnecting,
+                connectionError,
                 startScan,
                 connectToDevice,
                 disconnectFromDevice,

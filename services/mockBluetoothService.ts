@@ -37,7 +37,7 @@ class MockBluetoothService {
             setTimeout(() => {
                 resolve([
                     { id: 'pildhora-001', name: 'Pastillero de Elena' },
-                    { id: 'pildhora-002', name: 'Pastillero PILDHORA v2' },
+                    { id: 'pildhora-002', name: 'Pastillero (No responde)' },
                 ]);
             }, 2000); // Simulate 2-second scan
         });
@@ -46,9 +46,18 @@ class MockBluetoothService {
     connect(deviceId: string): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.state.isConnected) {
-                reject(new Error("Already connected to a device."));
+                reject(new Error("Ya hay un dispositivo conectado."));
                 return;
             }
+
+            // Simulate a device that consistently fails to connect for testing purposes
+            if (deviceId.includes('002')) {
+                setTimeout(() => {
+                    reject(new Error("El dispositivo no responde. Verifique que esté encendido."));
+                }, 1500);
+                return;
+            }
+
             setTimeout(() => {
                 const device: PillboxDevice = { id: deviceId, name: `Pastillero (${deviceId.slice(-4)})` };
                 this.updateState({
