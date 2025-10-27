@@ -48,9 +48,9 @@ const InstructionGenerator: React.FC<InstructionGeneratorProps> = ({ isOpen, onC
                
                 <div className="mt-6 min-h-[150px] bg-slate-50 p-4 rounded-md">
                     {loading && (
-                         <div className="flex items-center justify-center h-full">
+                         <div className="flex flex-col items-center justify-center h-full text-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pildhora-secondary"></div>
-                            <p className="ml-3 text-gray-600">Generando con IA...</p>
+                            <p className="mt-3 text-gray-600">Generando con IA...</p>
                         </div>
                     )}
                     {error && <p className="text-red-600 text-center">{error}</p>}

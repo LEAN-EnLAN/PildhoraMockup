@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import { Notification } from '../../types';
 
 const NotificationItem: React.FC<{ notification: Notification }> = ({ notification }) => (
-    <div className="p-3 hover:bg-slate-100 border-b last:border-b-0">
+    <div className="p-3 hover:bg-slate-100 transition-colors duration-150 rounded-md mx-2 my-1 cursor-pointer">
         <p className="text-sm text-gray-800">{notification.message}</p>
         <p className="text-xs text-gray-500 mt-1">{notification.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
     </div>
@@ -45,6 +45,8 @@ const NotificationBell: React.FC = () => {
             <button 
                 onClick={toggleDropdown}
                 className="relative p-2 rounded-full hover:bg-slate-200 transition-colors"
+                aria-haspopup="true"
+                aria-expanded={isOpen}
             >
                 <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -58,20 +60,24 @@ const NotificationBell: React.FC = () => {
             </button>
             
             {isOpen && (
-                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border z-30">
-                    <div className="p-3 border-b">
+                 <div className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl bg-white/80 backdrop-blur-md shadow-lg z-30 ring-1 ring-black ring-opacity-5">
+                    <div className="p-3 border-b border-slate-200/80">
                         <h4 className="font-semibold text-gray-800">Notificaciones</h4>
                     </div>
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="max-h-96 overflow-y-auto py-1">
                         {notifications.length > 0 ? (
-                            notifications.map(n => <NotificationItem key={n.id} notification={n} />)
+                            <div>
+                                {notifications.map(n => <NotificationItem key={n.id} notification={n} />)}
+                            </div>
                         ) : (
                             <p className="p-4 text-sm text-center text-gray-500">No hay notificaciones nuevas.</p>
                         )}
                     </div>
                     {unreadCount > 0 && (
-                        <div className="p-2 border-t bg-slate-50">
-                            <button onClick={markNotificationsAsRead} className="text-sm text-pildhora-secondary font-semibold w-full text-center">Marcar todas como leídas</button>
+                        <div className="p-2 border-t border-slate-200/80 bg-slate-50/70">
+                            <button onClick={markNotificationsAsRead} className="w-full text-center rounded-md py-1 text-sm text-pildhora-secondary font-semibold hover:bg-pildhora-secondary/10 transition-colors">
+                                Marcar todas como leídas
+                            </button>
                         </div>
                     )}
                  </div>

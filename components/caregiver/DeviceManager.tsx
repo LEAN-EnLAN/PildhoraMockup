@@ -3,24 +3,142 @@ import { useDevice } from '../../context/DeviceContext';
 import { ScanStatus, PillboxDevice } from '../../types';
 
 const BatteryIcon: React.FC<{ level: number }> = ({ level }) => {
-    const getBatteryPaths = () => {
-        if (level > 80) return <path d="M15 6.67V17.33a1.33 1.33 0 01-1.33 1.34H6.33A1.33 1.33 0 015 17.33V6.67h10z" fill="#4CAF50" />;
-        if (level > 40) return <path d="M15 12v5.33a1.33 1.33 0 01-1.33 1.34H6.33A1.33 1.33 0 015 17.33V12h10z" fill="#FFC107" />;
-        if (level > 15) return <path d="M15 14.67v2.66a1.33 1.33 0 01-1.33 1.34H6.33A1.33 1.33 0 015 17.33v-2.66h10z" fill="#FF9800" />;
-        return <path d="M15 16v1.33a1.33 1.33 0 01-1.33 1.34H6.33A1.33 1.33 0 015 17.33V16h10z" fill="#F44336" />;
+    const getBarColor = () => {
+        if (level > 80) return 'fill-pildhora-success';
+        if (level > 40) return 'fill-yellow-400';
+        if (level > 15) return 'fill-pildhora-warning';
+        return 'fill-pildhora-error';
     };
+    const barWidth = Math.max(0.5, (level / 100) * 12); // Max width of 12, min width to be visible
+
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm2-1a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H5z" clipRule="evenodd" fill="#6B7280" />
-            <path d="M8.33 3H11.67C12.22 3 12.67 3.45 12.67 4V5H7.33V4C7.33 3.45 7.78 3 8.33 3z" fill="#6B7280" />
-            {getBatteryPaths()}
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="6" width="18" height="12" rx="2" ry="2"></rect>
+            <line x1="23" y1="13" x2="23" y2="11"></line>
+            {level > 0 && 
+                <rect x="3" y="8" width={barWidth} height="8" rx="1" ry="1" className={`${getBarColor()} stroke-none`}></rect>
+            }
         </svg>
     );
 };
 
+
 const Spinner: React.FC<{ className?: string }> = ({ className = 'border-white' }) => (
     <div className={`animate-spin rounded-full h-5 w-5 border-b-2 ${className}`}></div>
 );
+
+// New simulation component with weekly view
+const WeeklySimulationPanel: React.FC<{ isConnected: boolean; onOpen: (slot: number) => void }> = ({ isConnected, onOpen }) => {
+    const [selectedDay, setSelectedDay] = useState(1); // 1 for Monday, 7 for Sunday
+    const [activeSlot, setActiveSlot] = useState<number | null>(null);
+
+    const dayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const timeSlotLabels = [
+        { name: 'Mañana', position: 'top-2 left-2 text-left' },
+        { name: 'Mediodía', position: 'top-2 right-2 text-right' },
+        { name: 'Tarde', position: 'bottom-2 left-2 text-left' },
+        { name: 'Noche', position: 'bottom-2 right-2 text-right' },
+    ];
+    
+    // Mapping from visual quadrant index to logical time slot (0:Mañana, 1:Mediodía, 2:Tarde, 3:Noche)
+    const quadrantMap = [0, 1, 2, 3]; 
+
+    const handleSlotClick = (quadrantIndex: number) => {
+        if (!isConnected) return;
+        // logical time slot index (0-3)
+        const timeSlotIndex = quadrantMap[quadrantIndex];
+        // compartment number (1-28)
+        const compartment = (selectedDay - 1) * 4 + (timeSlotIndex + 1);
+        onOpen(compartment);
+        setActiveSlot(compartment);
+        setTimeout(() => setActiveSlot(null), 500);
+    };
+    
+    const handleExtraSlotClick = () => {
+        if (!isConnected) return;
+        const compartment = 29;
+        onOpen(compartment);
+        setActiveSlot(compartment);
+        setTimeout(() => setActiveSlot(null), 500);
+    };
+
+    return (
+        <div className={`transition-opacity ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}>
+             <div className="flex justify-center space-x-1 sm:space-x-2 mb-4">
+                {dayLabels.map((label, index) => (
+                    <button
+                        key={index}
+                        disabled={!isConnected}
+                        onClick={() => setSelectedDay(index + 1)}
+                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full text-sm font-bold transition-colors ${
+                            selectedDay === index + 1
+                                ? 'bg-pildhora-secondary text-white'
+                                : isConnected ? 'bg-slate-200 text-gray-700 hover:bg-slate-300' : 'bg-slate-200 text-gray-500'
+                        }`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto">
+                {timeSlotLabels.map((labelInfo) => (
+                    <div key={labelInfo.name} className={`absolute ${labelInfo.position}`}>
+                        <p className="font-bold text-xs text-gray-400 tracking-wider">{labelInfo.name.toUpperCase()}</p>
+                    </div>
+                ))}
+
+                <div className="w-full h-full p-2">
+                    <div className="relative w-full h-full rounded-full bg-slate-100 shadow-inner grid grid-cols-2 grid-rows-2">
+                        {Array.from({ length: 4 }).map((_, index) => {
+                            const timeSlotIndex = quadrantMap[index];
+                            const compartment = (selectedDay - 1) * 4 + (timeSlotIndex + 1);
+                            const isActive = activeSlot === compartment;
+                            
+                            const quadrantClasses: { [key: number]: string } = {
+                                0: 'rounded-tl-full', // Top-left (Mañana)
+                                1: 'rounded-tr-full', // Top-right (Mediodía)
+                                2: 'rounded-bl-full', // Bottom-left (Tarde)
+                                3: 'rounded-br-full', // Bottom-right (Noche)
+                            };
+
+                            return (
+                                <button
+                                    key={index}
+                                    disabled={!isConnected}
+                                    onClick={() => handleSlotClick(index)}
+                                    className={`relative flex items-center justify-center transition-all duration-200
+                                        ${quadrantClasses[index]}
+                                        ${isConnected ? 'bg-white hover:bg-slate-200' : 'bg-slate-200'}
+                                        ${isActive ? 'bg-pildhora-primary' : ''}
+                                        border border-slate-200
+                                    `}
+                                     aria-label={`Simular apertura compartimento ${compartment}`}
+                                >
+                                    <span className={`text-2xl font-bold transition-colors ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                                        {compartment}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+             <div className="mt-4 text-center">
+                <button
+                    disabled={!isConnected}
+                    onClick={handleExtraSlotClick}
+                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                        activeSlot === 29 ? 'bg-pildhora-primary text-white' :
+                        isConnected ? 'bg-slate-200 text-gray-700 hover:bg-slate-300' : 'bg-slate-200 text-gray-500'
+                    }`}
+                >
+                    Compartimento #29 (Extra)
+                </button>
+            </div>
+        </div>
+    );
+};
 
 
 const DeviceManager: React.FC = () => {
@@ -142,20 +260,12 @@ const DeviceManager: React.FC = () => {
     );
 
     const renderSimulationView = () => (
-        <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-lg shadow mt-6">
-            <h4 className="font-bold text-yellow-800">Panel de Simulación</h4>
-            <p className="text-sm text-yellow-700 mb-3">Usa estos botones para simular que el paciente abre un compartimento del pastillero físico.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map(id => (
-                    <button
-                        key={id}
-                        onClick={() => _mockOpenCompartment(id)}
-                        disabled={!isConnected}
-                        className="px-3 py-2 font-semibold bg-yellow-400 text-yellow-900 rounded-md hover:bg-yellow-500 disabled:bg-gray-300 disabled:text-gray-500"
-                    >
-                        Abrir #{id}
-                    </button>
-                ))}
+        <div className="bg-white p-6 rounded-lg shadow">
+            <h4 className="font-bold text-gray-800 text-lg text-center">Simulación</h4>
+            <div className="mt-6">
+                <WeeklySimulationPanel isConnected={isConnected} onOpen={_mockOpenCompartment} />
+                
+                {!isConnected && <p className="text-center text-xs text-gray-500 mt-6">Conecta un dispositivo para activar la simulación.</p>}
             </div>
         </div>
     );

@@ -5,12 +5,7 @@ class MockBluetoothService {
         isConnected: false,
         batteryLevel: 0,
         device: null,
-        compartments: [
-            { id: 1, isOpen: false },
-            { id: 2, isOpen: false },
-            { id: 3, isOpen: false },
-            { id: 4, isOpen: false },
-        ],
+        compartments: Array.from({ length: 29 }, (_, i) => ({ id: i + 1, isOpen: false })),
     };
 
     private onStateChange: ((newState: PillboxDeviceState) => void) | null = null;

@@ -9,7 +9,7 @@ import EmergencyModal from '../components/patient/EmergencyModal';
 
 const PatientDashboard: React.FC = () => {
     const { user, logout } = useAuth();
-    const { intakeHistory, medications, loading, updateIntakeStatus, clearData } = useData();
+    const { intakeHistory, loading, updateIntakeStatus, clearData } = useData();
     const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
     const emergencyButtonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -119,7 +119,7 @@ const PatientDashboard: React.FC = () => {
                         </div>
                     )}
                     
-                    <VisualPillbox medications={medications} nextMedication={nextMedication} />
+                    <VisualPillbox intakeHistory={intakeHistory} nextMedication={nextMedication} />
                 </div>
             </main>
             

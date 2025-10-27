@@ -134,8 +134,8 @@ const MedicationFormModal: React.FC<MedicationFormModalProps> = ({ isOpen, onClo
                             <input type="date" name="refillDueDate" id="refillDueDate" value={formData.refillDueDate} onChange={handleChange} className={inputClasses} />
                         </div>
                         <div>
-                            <label htmlFor="compartment" className={labelClasses}>Compartimento (1-4)</label>
-                            <input type="number" name="compartment" id="compartment" value={formData.compartment} onChange={handleChange} className={inputClasses} min="1" max="4" required />
+                            <label htmlFor="compartment" className={labelClasses}>Compartimento (1-29)</label>
+                            <input type="number" name="compartment" id="compartment" value={formData.compartment} onChange={handleChange} className={inputClasses} min="1" max="29" required />
                         </div>
                     </div>
 
