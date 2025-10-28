@@ -27,7 +27,7 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold text-pildhora-primary">PILDHORA</h1>
-                    <p className="mt-2 text-lg text-gray-600">Tranquilidad conectada.</p>
+                    <p className="mt-2 text-lg text-gray-600">Tranquilidad conectada</p>
                 </div>
                 <div className="space-y-4">
                     <button

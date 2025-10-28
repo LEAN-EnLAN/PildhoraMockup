@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useDevice } from '../../context/DeviceContext';
 import { ScanStatus, PillboxDevice } from '../../types';
@@ -81,7 +82,7 @@ const WeeklySimulationPanel: React.FC<{ isConnected: boolean; onOpen: (slot: num
                 ))}
             </div>
 
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto">
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto mt-4">
                 {timeSlotLabels.map((labelInfo) => (
                     <div key={labelInfo.name} className={`absolute ${labelInfo.position}`}>
                         <p className="font-bold text-xs text-gray-400 tracking-wider">{labelInfo.name.toUpperCase()}</p>

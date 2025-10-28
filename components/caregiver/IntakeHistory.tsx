@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
 import { IntakeStatus, IntakeRecord } from '../../types';
 
@@ -16,50 +16,111 @@ const BluetoothIcon: React.FC = () => (
     </svg>
 );
 
+
 const StatusIcon: React.FC<{ status: IntakeStatus }> = ({ status }) => {
     switch (status) {
         case IntakeStatus.TAKEN:
-            return <div className="w-6 h-6 rounded-full bg-pildhora-success flex items-center justify-center text-white font-bold">✓</div>;
+            return <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold" aria-label="Tomada">✓</div>;
         case IntakeStatus.MISSED:
-            return <div className="w-6 h-6 rounded-full bg-pildhora-error flex items-center justify-center text-white font-bold">!</div>;
+            return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold" aria-label="Omitida">!</div>;
         case IntakeStatus.PENDING:
-            return <div className="w-6 h-6 rounded-full bg-gray-300 animate-pulse"></div>;
         default:
-            return null;
+            return <div className="w-8 h-8 rounded-full bg-gray-200" aria-label="Pendiente"></div>;
     }
 };
 
+const HistoryItem: React.FC<{ record: IntakeRecord }> = ({ record }) => (
+    <div className="bg-white p-4 rounded-lg flex items-center justify-between shadow-sm">
+        <div className="flex items-center space-x-4">
+            <StatusIcon status={record.status} />
+            <div>
+                <p className="font-bold text-lg text-gray-800">{record.medicationName}</p>
+                <p className="text-sm text-gray-500">{record.dosage}</p>
+            </div>
+        </div>
+        <div className="text-right">
+            <p className="text-lg font-bold text-pildhora-secondary">{record.scheduledTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
+            <div className="flex items-center justify-end">
+                <span className={`text-sm font-semibold ${
+                    record.status === IntakeStatus.TAKEN ? 'text-green-600' :
+                    record.status === IntakeStatus.MISSED ? 'text-red-600' : 'text-gray-500'
+                }`}>
+                    {record.status === IntakeStatus.TAKEN ? 'Tomada' : record.status === IntakeStatus.MISSED ? 'Omitida' : 'Pendiente'}
+                </span>
+                 {record.method === 'bluetooth' && <BluetoothIcon />}
+            </div>
+        </div>
+    </div>
+);
+
 const IntakeHistory: React.FC = () => {
     const { intakeHistory, loading } = useData();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDate, setSelectedDate] = useState(new Date());
+
+    const filteredHistory = useMemo(() => {
+        return intakeHistory
+            .filter(record => {
+                const recordDate = record.scheduledTime;
+                return recordDate.getFullYear() === selectedDate.getFullYear() &&
+                       recordDate.getMonth() === selectedDate.getMonth() &&
+                       recordDate.getDate() === selectedDate.getDate();
+            })
+            .filter(record => 
+                record.medicationName.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
+    }, [intakeHistory, searchTerm, selectedDate]);
+    
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const date = new Date(e.target.value);
+        // Adjust for timezone offset
+        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+        setSelectedDate(new Date(date.getTime() + userTimezoneOffset));
+    };
 
     if (loading) {
-        return <div className="bg-white p-6 rounded-lg shadow">Cargando historial...</div>;
+        return (
+            <div className="bg-white p-6 rounded-lg shadow">
+                <p>Cargando historial...</p>
+            </div>
+        );
     }
-
+    
     return (
         <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Historial de Tomas del Día</h3>
-            <div className="space-y-3">
-                {intakeHistory.map((record: IntakeRecord) => (
-                    <div key={record.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-md">
-                        <div className="flex items-center space-x-4">
-                            <StatusIcon status={record.status} />
-                            <div>
-                                <p className="font-semibold text-gray-700">{record.medicationName}</p>
-                                <div className="flex items-center space-x-2">
-                                    <p className="text-sm text-gray-500">{record.dosage}</p>
-                                    {record.method === 'bluetooth' && <BluetoothIcon />}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                           <p className="font-bold text-lg text-gray-800">{record.scheduledTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
-                           {record.status === IntakeStatus.MISSED && <p className="text-xs text-pildhora-error font-semibold">Omitida</p>}
-                           {record.status === IntakeStatus.TAKEN && <p className="text-xs text-pildhora-success font-semibold">Tomada</p>}
-                        </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Historial de Tomas</h3>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-grow">
+                    <input
+                        type="text"
+                        placeholder="Buscar medicamento..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-100 text-gray-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pildhora-secondary shadow-sm"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                ))}
+                </div>
+                <input
+                    type="date"
+                    value={selectedDate.toISOString().split('T')[0]}
+                    onChange={handleDateChange}
+                    className="px-4 py-2 bg-slate-100 text-gray-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pildhora-secondary shadow-sm"
+                />
             </div>
+            
+            {filteredHistory.length > 0 ? (
+                 <div className="space-y-3">
+                    {filteredHistory.map(record => <HistoryItem key={record.id} record={record} />)}
+                </div>
+            ) : (
+                <div className="text-center py-10">
+                    <p className="text-gray-500">No hay tomas registradas para esta fecha o búsqueda.</p>
+                </div>
+            )}
         </div>
     );
 };

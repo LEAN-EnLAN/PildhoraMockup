@@ -1,3 +1,4 @@
+
 export enum UserType {
     PATIENT = 'patient',
     CAREGIVER = 'caregiver',
@@ -40,6 +41,10 @@ export interface Medication {
     refillReminderStockLevel: number;
     compartment: number;
     refillDueDate: string | Date;
+    schedule?: {
+        frequency: 'Daily' | 'Weekly' | 'As needed';
+        times: string[]; // e.g., ["08:00", "20:00"]
+    };
 }
 
 export interface Notification {

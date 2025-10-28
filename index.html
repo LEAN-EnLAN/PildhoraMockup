@@ -5,10 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PILDHORA</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        .material-symbols-outlined {
+          font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        .adherence-green { background-color: #dcfce7; color: #166534; }
+        .adherence-yellow { background-color: #fef9c3; color: #854d0e; }
+        .adherence-red { background-color: #fee2e2; color: #991b1b; }
+        .adherence-gray { background-color: #f3f4f6; color: #4b5563; }
+    </style>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Lexend', 'sans-serif'],
+                    },
                     colors: {
                         'pildhora-primary': '#2E7D32',
                         'pildhora-secondary': '#1565C0',
@@ -24,11 +44,16 @@
                     },
                     animation: {
                         'pulse-outline': 'pulse-outline 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in-up': 'fade-in-up 0.3s ease-out forwards',
                     },
                     keyframes: {
                         'pulse-outline': {
                             '0%, 100%': { boxShadow: '0 0 0 0 rgba(21, 101, 192, 0.7)' },
                             '50%': { boxShadow: '0 0 0 8px rgba(21, 101, 192, 0)' },
+                        },
+                        'fade-in-up': {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
                         },
                     },
                 }

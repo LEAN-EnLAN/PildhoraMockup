@@ -1,17 +1,12 @@
-
-
 import React, { useState, useMemo } from 'react';
-import { useData } from '../../context/DataContext';
-import { IntakeRecord, IntakeStatus } from '../../types';
+import { useNavigate } from 'react-router-dom';
+import { useData } from '../context/DataContext';
+import { IntakeRecord, IntakeStatus } from '../types';
 
 type ViewType = 'today' | 'week' | 'month';
 type TimelineFilter = 'all' | 'taken' | 'missed';
 
-const AdherenceRing: React.FC<{ percentage: number | null; size?: number; strokeWidth?: number; className?: string }> = ({ percentage, size = 80, strokeWidth = 8, className = '' }) => {
-    if (percentage === null) {
-        return <div style={{ width: size, height: size }} className={className} />;
-    }
-    
+const AdherenceRing: React.FC<{ percentage: number; size?: number; strokeWidth?: number }> = ({ percentage, size = 80, strokeWidth = 8 }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percentage / 100) * circumference;
@@ -23,7 +18,7 @@ const AdherenceRing: React.FC<{ percentage: number | null; size?: number; stroke
     };
 
     return (
-        <div className={`relative ${className}`} style={{ width: size, height: size }}>
+        <div className="relative" style={{ width: size, height: size }}>
             <svg className="w-full h-full" viewBox={`0 0 ${size} ${size}`}>
                 <circle
                     className="stroke-gray-200"
@@ -47,7 +42,7 @@ const AdherenceRing: React.FC<{ percentage: number | null; size?: number; stroke
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className={`font-bold text-gray-900 ${size > 60 ? 'text-xl' : 'text-xs'}`}>{Math.round(percentage)}%</span>
+                <span className="text-xl font-bold text-gray-900">{Math.round(percentage)}%</span>
             </div>
         </div>
     );
@@ -70,7 +65,7 @@ const DailyTimeline: React.FC<{ records: IntakeRecord[], filter: TimelineFilter,
     };
     
     return (
-        <div className="bg-white rounded-lg shadow-sm px-4 pt-4 pb-4">
+        <div className="px-4 pb-4">
              <div className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gray-200 p-1 mb-4">
                 {(['all', 'taken', 'missed'] as const).map(f => (
                     <label key={f} className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-colors ${filter === f ? 'bg-white shadow-sm text-pildhora-secondary' : 'text-gray-600'}`}>
@@ -102,6 +97,7 @@ const DailyTimeline: React.FC<{ records: IntakeRecord[], filter: TimelineFilter,
 const MonthlyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
+    // Fix: Hoist firstDayOfMonth out of useMemo to make it accessible in the render method for calendar padding calculation.
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
     const { monthlyAdherence, calendarDays, adherenceByDay } = useMemo(() => {
@@ -110,7 +106,7 @@ const MonthlyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory 
 
         const recordsThisMonth = intakeHistory.filter(r => {
             const d = r.scheduledTime;
-            return d.getFullYear() === currentDate.getFullYear() && d.getMonth() === currentDate.getMonth() && d <= now;
+            return d >= firstDayOfMonth && d <= now && d <= lastDayOfMonth;
         });
 
         const taken = recordsThisMonth.filter(r => r.status === IntakeStatus.TAKEN).length;
@@ -139,33 +135,35 @@ const MonthlyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory 
         }
 
         return { monthlyAdherence, calendarDays, adherenceByDay };
-    }, [intakeHistory, currentDate]);
+    }, [intakeHistory, currentDate, firstDayOfMonth]);
 
     const changeMonth = (delta: number) => {
         setCurrentDate(d => {
             const newDate = new Date(d);
-            newDate.setMonth(d.getMonth() + delta, 1);
+            newDate.setMonth(d.getMonth() + delta);
             return newDate;
         });
     };
     
     return (
-        <div className="space-y-4">
-            <div className="bg-white rounded-lg shadow-sm p-6 flex items-center gap-6">
-                <AdherenceRing percentage={monthlyAdherence} />
-                <div>
-                    <p className="text-gray-900 text-lg font-bold">Adherencia Mensual</p>
-                    <p className="text-gray-500 text-sm">Resumen del mes actual.</p>
+        <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-6">
+                <div className="flex items-center gap-6">
+                    <AdherenceRing percentage={monthlyAdherence} />
+                    <div className="flex flex-col">
+                        <p className="text-gray-900 text-lg font-bold leading-normal">Tu Adherencia Mensual</p>
+                        <p className="text-gray-500 text-sm">¡Sigue así!</p>
+                    </div>
                 </div>
             </div>
-             <div className="bg-white rounded-lg shadow-sm p-4">
+             <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="flex items-center justify-between mb-4">
                     <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-slate-100"><span className="material-symbols-outlined text-gray-500">chevron_left</span></button>
                     <h3 className="text-gray-900 text-lg font-bold capitalize">{currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h3>
                     <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-slate-100"><span className="material-symbols-outlined text-gray-500">chevron_right</span></button>
                 </div>
                 <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-gray-500 mb-2">
-                    <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                    <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                     {Array(firstDayOfMonth.getDay() === 0 ? 6 : firstDayOfMonth.getDay() - 1).fill(null).map((_, i) => <div key={`empty-${i}`}></div>)}
@@ -203,10 +201,7 @@ const WeeklyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory }
             dayDate.setDate(startOfWeek.getDate() + i);
             if(dayDate > now) return { label, percentage: null };
 
-            const dayRecords = recordsThisWeek.filter(r => {
-                const d = r.scheduledTime;
-                return d.getFullYear() === dayDate.getFullYear() && d.getMonth() === dayDate.getMonth() && d.getDate() === dayDate.getDate();
-            });
+            const dayRecords = recordsThisWeek.filter(r => r.scheduledTime.getDay() === dayDate.getDay());
             const dTaken = dayRecords.filter(r => r.status === IntakeStatus.TAKEN).length;
             const dMissed = dayRecords.filter(r => r.status === IntakeStatus.MISSED).length;
             const dTotal = dTaken + dMissed;
@@ -221,12 +216,12 @@ const WeeklyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory }
     }, [intakeHistory]);
 
     return (
-         <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col gap-6">
+         <div className="bg-white rounded-xl shadow-sm p-6 flex flex-col gap-6">
             <div className="flex items-center gap-6">
                 <AdherenceRing percentage={weeklyAdherence} />
-                <div>
-                    <p className="text-gray-900 text-lg font-bold">Adherencia Semanal</p>
-                    <p className="text-gray-500 text-sm">Resumen de los últimos 7 días.</p>
+                <div className="flex flex-col">
+                    <p className="text-gray-900 text-lg font-bold leading-normal">Tu Adherencia Semanal</p>
+                    <p className="text-gray-500 text-sm">¡Buen trabajo esta semana!</p>
                 </div>
             </div>
             <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -248,41 +243,32 @@ const WeeklyView: React.FC<{intakeHistory: IntakeRecord[]}> = ({ intakeHistory }
 const TodayView: React.FC<{intakeHistory: IntakeRecord[]}> = ({intakeHistory}) => {
     const { todayRecords, adherenceByMed } = useMemo(() => {
         const now = new Date();
-        const startOfDay = new Date();
+        const startOfDay = new Date(now);
         startOfDay.setHours(0,0,0,0);
-        const endOfDay = new Date();
+        const endOfDay = new Date(now);
         endOfDay.setHours(23,59,59,999);
 
         const todayRecords = intakeHistory.filter(r => r.scheduledTime >= startOfDay && r.scheduledTime <= endOfDay)
             .sort((a,b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
 
-        const adherenceByMed: { [medId: string]: number | null } = {};
+        const adherenceByMed: { [medId: string]: number } = {};
+        // Fix: Use Array.from for robust type inference. The spread operator on a Set was being inferred as unknown[], causing a type error.
         const medIds = Array.from(new Set(todayRecords.map(r => r.medicationId)));
 
+        // Fix: Explicitly type `medId` as string in forEach callback to resolve index signature error.
         medIds.forEach((medId: string) => {
-            // Get records for this medication that are past or at the current time
-            const recordsForMed = todayRecords.filter(r => r.medicationId === medId && r.scheduledTime <= now);
-            
-            // If there are no past/present records for this med, there's no adherence to calculate yet.
-            if (recordsForMed.length === 0) {
-                adherenceByMed[medId] = null;
-                return;
-            }
-
+            const recordsForMed = intakeHistory.filter(r => r.medicationId === medId && r.scheduledTime <= now);
             const taken = recordsForMed.filter(r => r.status === IntakeStatus.TAKEN).length;
             const missed = recordsForMed.filter(r => r.status === IntakeStatus.MISSED).length;
-            const totalConsidered = taken + missed;
-
-            // Only calculate adherence if at least one dose was taken or missed.
-            // Pending past doses are not included in this simple calculation, assuming they will be updated.
-            adherenceByMed[medId] = totalConsidered > 0 ? (taken / totalConsidered) * 100 : null;
+            const total = taken + missed;
+            adherenceByMed[medId] = total > 0 ? (taken/total) * 100 : 100;
         });
 
         return { todayRecords, adherenceByMed };
     }, [intakeHistory]);
 
     return (
-        <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="px-4 pb-4">
             <p className="text-sm font-semibold text-gray-500 mb-2">Hoy, {new Date().toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}</p>
             <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4">
                 {todayRecords.map((record, index, arr) => (
@@ -305,16 +291,19 @@ const TodayView: React.FC<{intakeHistory: IntakeRecord[]}> = ({intakeHistory}) =
                             <p className="text-gray-500">{record.scheduledTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         
-                        <AdherenceRing percentage={adherenceByMed[record.medicationId]} size={48} strokeWidth={5} />
+                        <div className="relative">
+                            <AdherenceRing percentage={adherenceByMed[record.medicationId] ?? 100} size={48} strokeWidth={5} />
+                        </div>
                     </React.Fragment>
                 ))}
-                 {todayRecords.length === 0 && <p className="col-span-3 text-center text-gray-500 py-4">No hay tomas programadas para hoy.</p>}
             </div>
         </div>
     );
 };
 
-const AdherenceChart: React.FC = () => {
+
+const PatientHistoryPage: React.FC = () => {
+    const navigate = useNavigate();
     const { intakeHistory, loading } = useData();
     const [view, setView] = useState<ViewType>('month');
     const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>('all');
@@ -324,18 +313,15 @@ const AdherenceChart: React.FC = () => {
         const startOfDay = new Date();
         startOfDay.setHours(0,0,0,0);
         return intakeHistory
-            .filter(r => {
-                const d = r.scheduledTime;
-                return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-            })
+            .filter(r => r.scheduledTime >= startOfDay && r.scheduledTime.getDate() === now.getDate())
             .sort((a,b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
     }, [intakeHistory]);
 
     const renderContent = () => {
         if (loading) {
             return (
-                 <div className="flex items-center justify-center min-h-[300px] bg-white rounded-lg shadow-sm">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pildhora-secondary"></div>
+                 <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-pildhora-secondary"></div>
                 </div>
             );
         }
@@ -349,28 +335,32 @@ const AdherenceChart: React.FC = () => {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                 <h3 className="text-xl font-bold text-gray-800">Historial y Adherencia</h3>
-            </div>
-           
-            <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="min-h-screen bg-slate-100 font-sans text-gray-800">
+            <header className="sticky top-0 z-10 flex items-center justify-between bg-slate-100/80 p-4 pb-2 backdrop-blur-sm">
+                <button onClick={() => navigate(-1)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-black/5" aria-label="Volver">
+                    <span className="material-symbols-outlined text-gray-800">arrow_back</span>
+                </button>
+                <h2 className="flex-1 text-center text-lg font-bold text-gray-900">Historial y Adherencia</h2>
+                <div className="w-12" /> {/* Spacer */}
+            </header>
+
+            <div className="flex gap-3 overflow-x-auto px-4 py-2">
                 {(['today', 'week', 'month'] as const).map(v => (
                      <button 
                         key={v}
                         onClick={() => setView(v)}
-                        className={`h-8 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors ${view === v ? 'bg-pildhora-secondary text-white' : 'bg-gray-200 text-gray-800'}`}>
-                        {v === 'today' ? 'Hoy' : v === 'week' ? 'Semana' : 'Mes'}
+                        className={`h-8 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors ${view === v ? 'bg-pildhora-secondary/20 text-pildhora-secondary' : 'bg-gray-200 text-gray-800'}`}>
+                        {v === 'today' ? 'Hoy' : v === 'week' ? 'Esta Semana' : 'Este Mes'}
                     </button>
                 ))}
             </div>
             
-            <div className="space-y-4">
+            <main className="p-4 space-y-6">
                 {renderContent()}
-                {view !== 'today' && !loading && <DailyTimeline records={todayRecords} filter={timelineFilter} setFilter={setTimelineFilter} />}
-            </div>
+                {view !== 'today' && <DailyTimeline records={todayRecords} filter={timelineFilter} setFilter={setTimelineFilter} />}
+            </main>
         </div>
     );
 };
 
-export default AdherenceChart;
+export default PatientHistoryPage;

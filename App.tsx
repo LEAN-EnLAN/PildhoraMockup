@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -8,6 +9,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import CaregiverDashboard from './pages/CaregiverDashboard';
 import { UserType } from './types';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ManageMedicationPage from './pages/ManageMedicationPage';
 
 const App: React.FC = () => {
     return (
@@ -30,6 +32,22 @@ const App: React.FC = () => {
                                 element={
                                     <ProtectedRoute allowedUserType={UserType.CAREGIVER}>
                                         <CaregiverDashboard />
+                                    </ProtectedRoute>
+                                } 
+                            />
+                             <Route 
+                                path="/caregiver/medication/new" 
+                                element={
+                                    <ProtectedRoute allowedUserType={UserType.CAREGIVER}>
+                                        <ManageMedicationPage />
+                                    </ProtectedRoute>
+                                } 
+                            />
+                             <Route 
+                                path="/caregiver/medication/:medicationId" 
+                                element={
+                                    <ProtectedRoute allowedUserType={UserType.CAREGIVER}>
+                                        <ManageMedicationPage />
                                     </ProtectedRoute>
                                 } 
                             />
