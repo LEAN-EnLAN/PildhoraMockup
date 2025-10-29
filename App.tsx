@@ -10,6 +10,7 @@ import CaregiverDashboard from './pages/CaregiverDashboard';
 import { UserType } from './types';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ManageMedicationPage from './pages/ManageMedicationPage';
+import PatientHistoryPage from './pages/PatientHistoryPage';
 
 const App: React.FC = () => {
     return (
@@ -19,6 +20,14 @@ const App: React.FC = () => {
                     <HashRouter>
                         <Routes>
                             <Route path="/login" element={<LoginPage />} />
+                            <Route 
+                                path="/patient/history" 
+                                element={
+                                    <ProtectedRoute allowedUserType={UserType.PATIENT}>
+                                        <PatientHistoryPage />
+                                    </ProtectedRoute>
+                                } 
+                            />
                             <Route 
                                 path="/patient" 
                                 element={

@@ -32,6 +32,8 @@ export interface IntakeRecord {
     method?: 'manual' | 'bluetooth';
 }
 
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
 export interface Medication {
     id: string;
     patientId: string;
@@ -42,8 +44,9 @@ export interface Medication {
     compartment: number;
     refillDueDate: string | Date;
     schedule?: {
-        frequency: 'Daily' | 'Weekly' | 'As needed';
+        frequency: 'Diariamente' | 'Cada 8 horas' | 'Cada 12 horas' | 'Días específicos de la semana' | 'Según sea necesario';
         times: string[]; // e.g., ["08:00", "20:00"]
+        days?: DayOfWeek[];
     };
 }
 

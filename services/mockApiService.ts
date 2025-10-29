@@ -33,16 +33,16 @@ const getInitialData = (): MockData => {
     const today = getStartOfToday();
     
     const initialMedications: Medication[] = [
-        { id: 'med-01', patientId: PATIENT_ID, name: 'Lisinopril', dosage: '10mg', stock: 50, refillReminderStockLevel: 10, compartment: 1, refillDueDate: new Date(today.getTime() + 20 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Daily', times: ['08:00'] } },
-        { id: 'med-02', patientId: PATIENT_ID, name: 'Metformin', dosage: '500mg', stock: 80, refillReminderStockLevel: 20, compartment: 2, refillDueDate: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Daily', times: ['14:00', '20:00'] } },
-        { id: 'med-03', patientId: PATIENT_ID, name: 'Simvastatin', dosage: '20mg', stock: 25, refillReminderStockLevel: 5, compartment: 3, refillDueDate: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Daily', times: ['20:00'] } },
-        { id: 'med-04', patientId: PATIENT_ID, name: 'Aspirina', dosage: '81mg', stock: 15, refillReminderStockLevel: 7, compartment: 1, refillDueDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Daily', times: ['08:00'] } },
+        { id: 'med-01', patientId: PATIENT_ID, name: 'Lisinopril', dosage: '10mg', stock: 50, refillReminderStockLevel: 10, compartment: 1, refillDueDate: new Date(today.getTime() + 20 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Diariamente', times: ['08:00'] } },
+        { id: 'med-02', patientId: PATIENT_ID, name: 'Metformin', dosage: '500mg', stock: 80, refillReminderStockLevel: 20, compartment: 2, refillDueDate: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Diariamente', times: ['14:00', '20:00'] } },
+        { id: 'med-03', patientId: PATIENT_ID, name: 'Simvastatin', dosage: '20mg', stock: 25, refillReminderStockLevel: 5, compartment: 3, refillDueDate: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Diariamente', times: ['20:00'] } },
+        { id: 'med-04', patientId: PATIENT_ID, name: 'Aspirina', dosage: '81mg', stock: 15, refillReminderStockLevel: 7, compartment: 1, refillDueDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000), schedule: { frequency: 'Diariamente', times: ['08:00'] } },
     ];
     
     // Dynamically generate today's intake records from medication schedules
     const intakeForToday: IntakeRecord[] = [];
     initialMedications.forEach(med => {
-        if (med.schedule && med.schedule.frequency === 'Daily') {
+        if (med.schedule && med.schedule.frequency === 'Diariamente') {
             med.schedule.times.forEach(time => {
                 const [hour, minute] = time.split(':').map(Number);
                 const scheduledTime = new Date(today);
@@ -143,8 +143,22 @@ const regenerateDailyIntakes = () => {
     const otherDaysIntake = MOCK_DATA.intakeHistory.filter(r => r.scheduledTime.toDateString() !== today.toDateString());
     
     const intakeForToday: IntakeRecord[] = [];
+    
+    const dayAbbrs = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const todayDayAbbr = dayAbbrs[today.getDay()];
+
     MOCK_DATA.medications.forEach(med => {
-        if (med.schedule && med.schedule.frequency === 'Daily') {
+        let shouldGenerate = false;
+        if (med.schedule?.frequency === 'Diariamente') {
+            shouldGenerate = true;
+        } else if (med.schedule?.frequency === 'Días específicos de la semana') {
+            if (med.schedule.days?.includes(todayDayAbbr as any)) {
+                shouldGenerate = true;
+            }
+        }
+        // Other frequencies like 'Cada 8 horas' are not handled by this daily generator for simplicity.
+
+        if (shouldGenerate && med.schedule?.times) {
             med.schedule.times.forEach(time => {
                 const [hour, minute] = time.split(':').map(Number);
                 const scheduledTime = new Date(today);

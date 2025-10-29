@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { IntakeRecord, IntakeStatus } from '../types';
@@ -13,6 +14,7 @@ const PatientDashboard: React.FC = () => {
     const { intakeHistory, loading, updateIntakeStatus, clearData } = useData();
     const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
     const emergencyButtonRef = React.useRef<HTMLButtonElement>(null);
+    const navigate = useNavigate();
 
 
     const { nextMedication, upcomingSchedule, pastSchedule } = useMemo(() => {
@@ -66,6 +68,14 @@ const PatientDashboard: React.FC = () => {
                         <p className="text-lg text-gray-600">Hola, {user?.name.split(' ')[0]}</p>
                     </div>
                     <div className="flex items-center space-x-2 sm:space-x-4">
+                        <button
+                            onClick={() => navigate('/patient/history')}
+                            className="flex items-center space-x-2 px-3 sm:px-4 py-2 text-base font-bold text-white bg-pildhora-info rounded-xl hover:bg-sky-600 active:scale-95 transition-transform"
+                            aria-label="Ver mi historial"
+                        >
+                            <span className="material-symbols-outlined">history</span>
+                            <span className="hidden sm:inline">MI HISTORIAL</span>
+                        </button>
                         <button
                             ref={emergencyButtonRef}
                             onClick={() => setIsEmergencyModalOpen(true)}
